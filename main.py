@@ -5,7 +5,7 @@ import re
 from datetime import date, datetime
 import json
 
-base_url = 'https://wiki.arvato-systems.de'
+base_url = 'ATLASSIAN URL'
 date_today = datetime.today()
 html_doc = requests.get(base_url + '/rest/applinks/1.0/manifest').text
 soup = BeautifulSoup(html_doc, 'xml')
