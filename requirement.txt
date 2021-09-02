@@ -1,0 +1,7 @@
+
+module needed to be installed
+    bs4
+    requests
+    html5lib
+    lxml
+    json
