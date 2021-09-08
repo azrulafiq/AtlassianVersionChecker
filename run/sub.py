@@ -1,39 +1,30 @@
-from bs4 import BeautifulSoup
-import requests
 import re
+import requests
+from bs4 import BeautifulSoup
 from datetime import datetime
-import json
 
-maindata1 = []
-maindata2 = []
-finaldata = []
+def parse_html(url):
+    html_doc = requests.get(url).text
+    soup = BeautifulSoup(html_doc, 'html5lib')
+    return soup
 
-base_url1 = 'https://confluence.atlassian.com/jirasoftware/jira-software-release-notes-776821069.html'
-base_url2 = 'https://confluence.atlassian.com/support/atlassian-support-end-of-life-policy-201851003.html'
+def push_CONFL_V_LTS(collection_data, maindata):
+    for confl in collection_data:
+        item = {}
+        lts = 'LONG TERM SUPPORT'
 
-html_doc1 = requests.get(base_url1).text
-soup1 = BeautifulSoup(html_doc1, 'html5lib')
+        item['version'] = confl.text.replace('Confluence ', '')
 
-html_doc2 = requests.get(base_url2).text
-soup2 = BeautifulSoup(html_doc2, 'html5lib')
+        if lts in item['version']:
+            item['long term support'] = True
+            item['version'] = item['version'].replace(lts, '')
+            item['version'] = float(item['version'])
+        else:
+            item['long term support'] = False
+            item['version'] = float(item['version'])
+        maindata.append(item)
 
-raw_data8 = soup1.find('h2', {"id": lambda L: L and L.startswith(
-    'JiraSoftwarereleasenotes-JiraSoftware8')}).next_sibling
-collection_data8 = raw_data8.find_all('li')
-
-raw_data7 = soup1.find('h2', {"id": lambda L: L and L.startswith(
-    'JiraSoftwarereleasenotes-JiraSoftware7')}).next_sibling
-collection_data7 = raw_data7.find_all('li')
-
-raw_data1 = soup2.find('h2', {"id": lambda L: L and L.startswith(
-    'AtlassianSupportEndofLifePolicy-JiraSoftware')}).next_sibling.next_sibling.text
-jira1 = raw_data1.split(')')
-
-raw_data2 = soup2.find('h2', {"id": lambda L: L and L.startswith(
-    'AtlassianSupportEndofLifePolicy-JiraSoftware')}).next_sibling.text
-jira2 = raw_data2.split(')')
-
-def push_V_LTS(collection_data):
+def push_JIRA_V_LTS(collection_data, maindata):
     for data in collection_data:
         item = {}
         set_data = data.text
@@ -57,9 +48,9 @@ def push_V_LTS(collection_data):
             # print('Version: ' + str(item['version']))
             # print('LTS: ' + str(item['long term support']))
 
-        maindata1.append(item)
+        maindata.append(item)
 
-def push_V_EOL(collection_data):
+def push_V_EOL(collection_data, maindata):
     for set_data in collection_data:
         item = {}
         col_data = set_data.replace('(', '')
@@ -97,34 +88,22 @@ def push_V_EOL(collection_data):
             item['eol'] = str(item['eol'])
 
         # store data
-        maindata2.append(item)
+        maindata.append(item)
 
-push_V_LTS(collection_data8)
-push_V_LTS(collection_data7)
-push_V_EOL(jira2)
-push_V_EOL(jira1)
+def remove_empty_data(data):
+    newSet = list(filter(None, data))
+    return newSet
 
-set1 = list(filter(None, maindata1))
-set2 = list(filter(None, maindata2))
-
-for a in set1:
-    item = {}
-    # a['version']
-    # item['product'] = 'Jira Software'  # optional
-    item['version'] = a['version']
-    item['long term support'] = a['long term support']
-    item['eol'] = 'null' # No data from official site
-    for b in set2:
-        b['version']
-        if b['version'] == a['version']:
-            item['eol'] = b['eol']
-    finaldata.append(item)
-
-    # For Debug purpose
-    # print('Version: ' + str(item['version']))
-    # print('LTS: ' + str(item['long term support']))
-    # print('EOL Date: ' + str(item['eol']))
-
-# Output to Json
-with open("jira.json", "w") as writeJSON:
-    json.dump(finaldata, writeJSON, indent=4, ensure_ascii=False)
+def merge_all_data(set1, set2, finaldata):
+    for a in set1:
+        item = {}
+        # a['version']
+        item['version'] = a['version']
+        item['long term support'] = a['long term support']
+        item['eol'] = 'null' # No data from official site
+        for b in set2:
+            b['version']
+            if b['version'] == a['version']:
+                item['eol'] = b['eol']
+        finaldata.append(item)
+    return finaldata
