@@ -33,6 +33,8 @@ raw_data2 = soup2.find('h2', {"id": lambda L: L and L.startswith(
     'AtlassianSupportEndofLifePolicy-JiraSoftware')}).next_sibling.text
 jira2 = raw_data2.split(')')
 
+print(jira1)
+
 def push_V_LTS(collection_data):
     for data in collection_data:
         item = {}

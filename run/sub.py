@@ -29,10 +29,8 @@ def push_JIRA_V_LTS(collection_data, maindata):
         item = {}
         set_data = data.text
         set_data = set_data.replace('release notes', '')
-
         nonlts = re.findall('Jira Software\D\d.\d+', set_data)
-        lts = re.findall(
-            'Jira Software\D\d.\d+\s+LONG\sTERM\sSUPPORT', set_data)
+        lts = re.findall('Jira Software\D\d.\d+\s+LONG\sTERM\sSUPPORT', set_data)
 
         version_data = re.findall('\d+\.\d+', str(nonlts))
         for version in version_data:
@@ -70,8 +68,8 @@ def push_V_EOL(collection_data, maindata):
         new_data = col_data.replace('EOLdate:', ' ')
 
         # Massage version data
-        item['version'] = re.findall('\d+\.\d+', new_data)
-        for version in item['version']:
+        newSet = re.findall('\d+\.\d+', new_data)
+        for version in newSet:
             item['version'] = float(version)
 
         # Massage EOL data
@@ -97,7 +95,6 @@ def remove_empty_data(data):
 def merge_all_data(set1, set2, finaldata):
     for a in set1:
         item = {}
-        # a['version']
         item['version'] = a['version']
         item['long term support'] = a['long term support']
         item['eol'] = 'null' # No data from official site
