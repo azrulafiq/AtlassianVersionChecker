@@ -5,7 +5,7 @@ from datetime import datetime
 
 def parse_html(url):
     html_doc = requests.get(url).text
-    soup = BeautifulSoup(html_doc, 'html5lib')
+    soup = BeautifulSoup(html_doc, 'html5lib') # lxml for fast processing
     return soup
 
 def push_CONFL_V_LTS(collection_data, maindata):
@@ -48,24 +48,40 @@ def push_JIRA_V_LTS(collection_data, maindata):
 
         maindata.append(item)
 
+def push_BAMBOO_V_LTS(collection_data, maindata):
+    for data in collection_data:
+        item = {}
+        set_data = data.text
+        set_data = set_data.replace('release notes', '')
+        nonlts = re.findall('Bamboo\D\d.\d+', set_data)
+
+        version_data = re.findall('\d+\.\d+', str(nonlts))
+        for version in version_data:
+            item['version'] = float(version)
+            item['long term support'] = False
+            # print('Version: ' + str(item['version']))
+            # print('LTS: ' + str(item['long term support']))
+
+        maindata.append(item)
+
 def push_V_EOL(collection_data, maindata):
     for set_data in collection_data:
         item = {}
-        col_data = set_data.replace('(', '')
-        col_data = col_data.replace(' ', '')
+        set_data = set_data.replace('(', '')
+        set_data = set_data.replace(' ', '')
         # To match with datetime library
-        col_data = col_data.replace('January', 'Jan')
-        col_data = col_data.replace('February', 'Feb')
-        col_data = col_data.replace('March', 'Mar')
-        col_data = col_data.replace('April', 'Apr')
-        col_data = col_data.replace('June', 'Jun')
-        col_data = col_data.replace('July', 'Jul')
-        col_data = col_data.replace('August', 'Aug')
-        col_data = col_data.replace('September', 'Sep')
-        col_data = col_data.replace('October', 'Oct')
-        col_data = col_data.replace('November', 'Nov')
-        col_data = col_data.replace('December', 'Dec')
-        new_data = col_data.replace('EOLdate:', ' ')
+        set_data = set_data.replace('January', 'Jan')
+        set_data = set_data.replace('February', 'Feb')
+        set_data = set_data.replace('March', 'Mar')
+        set_data = set_data.replace('April', 'Apr')
+        set_data = set_data.replace('June', 'Jun')
+        set_data = set_data.replace('July', 'Jul')
+        set_data = set_data.replace('August', 'Aug')
+        set_data = set_data.replace('September', 'Sep')
+        set_data = set_data.replace('October', 'Oct')
+        set_data = set_data.replace('November', 'Nov')
+        set_data = set_data.replace('December', 'Dec')
+        new_data = set_data.replace('EOLdate:', ' ')
 
         # Massage version data
         newSet = re.findall('\d+\.\d+', new_data)
@@ -73,16 +89,22 @@ def push_V_EOL(collection_data, maindata):
             item['version'] = float(version)
 
         # Massage EOL data
-        # Special Case 1
+        # Special Case 1 (Conflunce)
         date_v1 = re.findall('[A-Za-z]+\d+,\d+', new_data)
         for date in date_v1:
             item['eol'] = datetime.strptime(date, '%b%d,%Y')
             item['eol'] = str(item['eol'])
             
-        # Special Case 2
+        # Special Case 2 (Jira, Confluence)
         date_v2 = re.findall('\d+[A-Za-z]+,\d+', new_data)
         for date in date_v2:
             item['eol'] = datetime.strptime(date, '%d%b,%Y')
+            item['eol'] = str(item['eol'])
+
+        # Special Case 3 (Bamboo)
+        date_v3 = re.findall('\s\d+[A-Za-z]+\d+', new_data)
+        for date in date_v3:
+            item['eol'] = datetime.strptime(date, ' %d%b%Y')
             item['eol'] = str(item['eol'])
 
         # store data
@@ -104,3 +126,10 @@ def merge_all_data(set1, set2, finaldata):
                 item['eol'] = b['eol']
         finaldata.append(item)
     return finaldata
+
+def remove_duplicates(data):
+    res = []
+    for i in data:
+        if i not in res:
+            res.append(i)
+    return res
