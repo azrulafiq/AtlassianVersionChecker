@@ -5,7 +5,7 @@ from datetime import datetime
 
 def parse_html(url):
     html_doc = requests.get(url).text
-    soup = BeautifulSoup(html_doc, 'html5lib') # lxml for fast processing
+    soup = BeautifulSoup(html_doc, 'lxml') # lxml for fast processing, html5lib
     return soup
 
 def push_CONFL_V_LTS(collection_data, maindata):
@@ -14,6 +14,28 @@ def push_CONFL_V_LTS(collection_data, maindata):
         lts = 'LONG TERM SUPPORT'
 
         item['version'] = confl.text.replace('Confluence ', '')
+
+        if lts in item['version']:
+            item['long term support'] = True
+            item['version'] = item['version'].replace(lts, '')
+            item['version'] = float(item['version'])
+        else:
+            item['long term support'] = False
+            item['version'] = float(item['version'])
+        maindata.append(item)
+
+def push_BIT_V_LTS(collection_data, maindata):
+    for confl in collection_data:
+        item = {}
+        lts = ' (Long Term Support release)'
+        confl = confl.text
+
+        confl = confl.replace('Bitbucket Data Center and Server ', '')
+        confl = confl.replace('Bitbucket Server and Data Center ', '')
+        confl = confl.replace('Bitbucket Server ', '')
+        item['version'] = confl
+
+        # print('Version: ' + str(item['version']))
 
         if lts in item['version']:
             item['long term support'] = True
@@ -57,7 +79,7 @@ def push_BAMBOO_V_LTS(collection_data, maindata):
 
         version_data = re.findall('\d+\.\d+', str(nonlts))
         for version in version_data:
-            item['version'] = float(version)
+            item['version'] = f"{version:.2f}"
             item['long term support'] = False
             # print('Version: ' + str(item['version']))
             # print('LTS: ' + str(item['long term support']))
