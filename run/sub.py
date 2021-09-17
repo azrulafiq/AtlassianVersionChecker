@@ -1,5 +1,6 @@
 import re
 import requests
+from unicodedata import normalize
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -10,40 +11,39 @@ def parse_html(url):
 
 def push_CONFL_V_LTS(collection_data, maindata):
     for confl in collection_data:
-        item = {}
         lts = 'LONG TERM SUPPORT'
-
+        item = {}
         item['version'] = confl.text.replace('Confluence ', '')
 
         if lts in item['version']:
             item['long term support'] = True
             item['version'] = item['version'].replace(lts, '')
-            item['version'] = float(item['version'])
+            item['version'] = normalize("NFKD", item['version'])
         else:
             item['long term support'] = False
-            item['version'] = float(item['version'])
+            item['version'] = normalize("NFKD", item['version'])
         maindata.append(item)
 
 def push_BIT_V_LTS(collection_data, maindata):
-    for confl in collection_data:
+    for bit in collection_data:
         item = {}
         lts = ' (Long Term Support release)'
-        confl = confl.text
+        bit = bit.text
 
-        confl = confl.replace('Bitbucket Data Center and Server ', '')
-        confl = confl.replace('Bitbucket Server and Data Center ', '')
-        confl = confl.replace('Bitbucket Server ', '')
-        item['version'] = confl
+        bit = bit.replace('Bitbucket Data Center and Server ', '')
+        bit = bit.replace('Bitbucket Server and Data Center ', '')
+        bit = bit.replace('Bitbucket Server ', '')
+        item['version'] = bit
 
         # print('Version: ' + str(item['version']))
 
         if lts in item['version']:
             item['long term support'] = True
             item['version'] = item['version'].replace(lts, '')
-            item['version'] = float(item['version'])
+            # item['version'] = float(item['version'])
         else:
             item['long term support'] = False
-            item['version'] = float(item['version'])
+            # item['version'] = float(item['version'])
         maindata.append(item)
 
 def push_JIRA_V_LTS(collection_data, maindata):
@@ -56,17 +56,36 @@ def push_JIRA_V_LTS(collection_data, maindata):
 
         version_data = re.findall('\d+\.\d+', str(nonlts))
         for version in version_data:
-            item['version'] = float(version)
+            item['version'] = version
             item['long term support'] = False
             # print('Version: ' + str(item['version']))
             # print('LTS: ' + str(item['long term support']))
 
         version_data = re.findall('\d+\.\d+', str(lts))
         for version in version_data:
-            item['version'] = float(version)
+            item['version'] = version
             item['long term support'] = True
             # print('Version: ' + str(item['version']))
             # print('LTS: ' + str(item['long term support']))
+
+        maindata.append(item)
+
+def push_JSM_V_LTS(collection_data, maindata):
+    for data in collection_data:
+        item = {}
+        set_data = data.text
+        jsm = re.findall('Jira Service Management\D\d.\d+', set_data)
+        jsd = re.findall('Jira Service Desk\D\d.\d+', set_data)
+
+        version_data = re.findall('\d+\.\d+', str(jsm))
+        for version in version_data:
+            item['version'] = version
+            item['long term support'] = False
+
+        version_data = re.findall('\d+\.\d+', str(jsd))
+        for version in version_data:
+            item['version'] = version
+            item['long term support'] = False
 
         maindata.append(item)
 
@@ -79,11 +98,23 @@ def push_BAMBOO_V_LTS(collection_data, maindata):
 
         version_data = re.findall('\d+\.\d+', str(nonlts))
         for version in version_data:
-            item['version'] = f"{version:.2f}"
+            item['version'] = version
             item['long term support'] = False
-            # print('Version: ' + str(item['version']))
-            # print('LTS: ' + str(item['long term support']))
 
+        maindata.append(item)
+
+def push_CROWD_V_LTS(collection_data, maindata):
+    for data in collection_data:
+        item = {}
+        item['version'] = data.text
+        item['long term support'] = False
+        maindata.append(item)
+
+def push_FISH_V_LTS(collection_data, maindata):
+    for data in collection_data:
+        item = {}
+        item['version'] = data.text
+        item['long term support'] = False
         maindata.append(item)
 
 def push_V_EOL(collection_data, maindata):
@@ -91,6 +122,7 @@ def push_V_EOL(collection_data, maindata):
         item = {}
         set_data = set_data.replace('(', '')
         set_data = set_data.replace(' ', '')
+        set_data = set_data.replace('EOLdateextendedto', '')
         # To match with datetime library
         set_data = set_data.replace('January', 'Jan')
         set_data = set_data.replace('February', 'Feb')
@@ -108,7 +140,8 @@ def push_V_EOL(collection_data, maindata):
         # Massage version data
         newSet = re.findall('\d+\.\d+', new_data)
         for version in newSet:
-            item['version'] = float(version)
+            # item['version'] = float(version)
+            item['version'] = version
 
         # Massage EOL data
         # Special Case 1 (Conflunce)
@@ -136,16 +169,19 @@ def remove_empty_data(data):
     newSet = list(filter(None, data))
     return newSet
 
-def merge_all_data(set1, set2, finaldata):
+def merge_all_data(set1, set2, finaldata, product):
     for a in set1:
         item = {}
-        item['version'] = a['version']
-        item['long term support'] = a['long term support']
-        item['eol'] = 'null' # No data from official site
+        # item['product'] = product
+        # item['version'] = a['version']
+        item[product + '_version'] = a['version']
+        item[product + '_long_term_support'] = a['long term support']
+        item[product + '_end_of_life'] = 'null' # No data from official site
         for b in set2:
             b['version']
             if b['version'] == a['version']:
-                item['eol'] = b['eol']
+                # item['eol'] = b['eol']
+                item[product + '_end_of_life'] = b['eol']
         finaldata.append(item)
     return finaldata
 
