@@ -84,5 +84,5 @@ for a in data1:
     # print('EOL Date: ' + str(item['eol']))
 
 # Output to Json
-with open("confuence.json", "w") as writeJSON:
+with open("confluence.json", "w") as writeJSON:
     json.dump(maindata, writeJSON, indent=4, ensure_ascii=False)
