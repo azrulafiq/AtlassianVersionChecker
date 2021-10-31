@@ -8,7 +8,7 @@ Grab all Atlassian version info from release notes and compare with current runn
   git clone https://github.com/azrulafiq/AtlassianVersionChecker.git && cd AtlassianVersionChecker
   ```
 - Install requirements
-  ``
+  ```
   pip install -r requirement.txt
   ```
 
