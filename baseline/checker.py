@@ -4,8 +4,11 @@ import requests
 import re
 from datetime import date, datetime
 import json
+import os
+from dotenv import load_dotenv
 
-base_url = 'ATLASSIAN URL'
+load_dotenv()
+base_url = os.getenv('ATLASSIAN_URL')
 date_today = datetime.today()
 html_doc = requests.get(base_url + '/rest/applinks/1.0/manifest').text
 soup = BeautifulSoup(html_doc, 'xml')
@@ -17,7 +20,7 @@ running_version = re.findall('\d+\.\d+', running_version)[0]
 running_version = float(running_version)
 
 # simulate other versions
-running_version = 7.0
+# running_version = 7.0
 
 conf_file = open('confluence.json', 'r')
 content = conf_file.read()
